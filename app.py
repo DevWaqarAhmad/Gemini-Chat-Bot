@@ -12,7 +12,7 @@ def response_generator(prompt):
         time.sleep(0.05)
 
 
-st.title("Butt Karahi Chatbot")
+st.title("Butt Karahi AI Agent ")
 
 # Initialize chat history
 if "messages" not in st.session_state:
