@@ -1,11 +1,13 @@
 import os
 import google.generativeai as genai
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 genai.configure(api_key="AIzaSyBL-AxG9VvXh36fN1HidspNonA11DX4jgI")
-#genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Model configuration
 generation_config = {
@@ -22,6 +24,7 @@ model = genai.GenerativeModel(
     generation_config=generation_config,
 )
 
+# Function to generate chatbot response
 def GenerateResponse(input_text):
     """Generates a response based on user input."""
     response = model.generate_content([
@@ -48,5 +51,19 @@ def GenerateResponse(input_text):
     ])
     return response.text
 
-# Example usage:
-# print(GenerateResponse("What are the special dishes?"))
+# Flask App Setup
+app = Flask(__name__)
+CORS(app)  # Enables CORS for all routes
+
+@app.route('/chat', methods=['POST'])
+def chatbot():
+    data = request.json
+    user_message = data.get("message", "")
+
+    # Get response from Gemini AI
+    bot_response = GenerateResponse(user_message)
+    
+    return jsonify({"response": bot_response})
+
+if __name__ == '__main__':
+    app.run(debug=True)
