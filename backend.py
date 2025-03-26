@@ -3,6 +3,9 @@ import google.generativeai as genai
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
+from langchain_google_genai import GoogleGenerativeAI
+from langchain.chains import ConversationChain
+from langchain.memory import ConversationBufferMemory
 
 # Load environment variables
 load_dotenv()
@@ -23,6 +26,11 @@ model = genai.GenerativeModel(
     model_name="gemini-1.5-flash",
     generation_config=generation_config,
 )
+
+# LangChain Setup
+llm = GoogleGenerativeAI(model="gemini-1.5-flash", google_api_key="AIzaSyBL-AxG9VvXh36fN1HidspNonA11DX4jgI")
+conversation_memory = ConversationBufferMemory()
+conversation = ConversationChain(llm=llm, memory=conversation_memory)
 
 # Function to generate chatbot response
 def GenerateResponse(input_text):
@@ -54,6 +62,10 @@ def GenerateResponse(input_text):
 # Flask App Setup
 app = Flask(__name__)
 CORS(app)  # Enables CORS for all routes
+
+@app.route("/")
+def home():
+    return "Flask Server is Running! Access the chatbot at /chat"
 
 @app.route('/chat', methods=['POST'])
 def chatbot():

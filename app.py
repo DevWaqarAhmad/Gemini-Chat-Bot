@@ -1,49 +1,78 @@
 import streamlit as st
-import random
-import time
+import os
 import backend
+import json
 from langchain.memory import ConversationBufferMemory
 
-# Initialize LangChain Memory (Stores chat history in RAM)
-memory = ConversationBufferMemory()
+# ✅ Load chat history from a file
+def load_chat_history():
+    try:
+        with open("chat_memory.json", "r") as file:
+            content = file.read().strip()
+            if not content:
+                return []
+            history = json.loads(content)
+            return history if isinstance(history, list) else []
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
 
-# Streamed response emulator
-def response_generator(prompt):
-    response = backend.GenerateResponse(prompt)
-    
-    # Save conversation in memory
-    memory.save_context({"input": prompt}, {"output": response})
-    
-    for word in response.split():
-        yield word + " "
-        time.sleep(0.05)
+# ✅ Save chat history to a file
+def save_chat_history(history):
+    with open("chat_memory.json", "w") as file:
+        json.dump(history, file)
 
-st.title("Butt Karahi AI Agent ")
+# ✅ Initialize memory
+if "memory" not in st.session_state:
+    st.session_state.memory = ConversationBufferMemory()
 
-# Initialize chat history (Using LangChain Memory)
+# ✅ Load chat history
 if "messages" not in st.session_state:
-    st.session_state.messages = memory.load_memory_variables({}).get("chat_history", [])
+    stored_history = load_chat_history()
+    formatted_history = [{"role": msg["role"], "content": msg["content"]} for msg in stored_history]
+    st.session_state.messages = formatted_history
 
-# Display chat messages from memory
+# ✅ Store user name when introduced
+if "user_name" not in st.session_state:
+    st.session_state.user_name = None  
+
+st.title("Butt Karahi AI Agent")
+
+# ✅ Display full chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Accept user input
+# ✅ Handle user input
 if prompt := st.chat_input("Ask Something About Butt Karahi?"):
-    # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
-    
-    # Display user message in chat message container
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Generate response from Gemini AI & store it in memory
-    with st.chat_message("assistant"):
-        response = st.write_stream(response_generator(prompt))
-    
-    # Add assistant response to chat history
-    st.session_state.messages.append({"role": "assistant", "content": response})
+    # ✅ Detect name introduction
+    if "my name is" in prompt.lower():
+        st.session_state.user_name = prompt.split("my name is")[-1].strip()
 
-    # Update LangChain memory
-    memory.save_context({"input": prompt}, {"output": response})
+    # ✅ Generate response using full chat history
+    chat_context = "\n".join([f"{msg['role']}: {msg['content']}" for msg in st.session_state.messages])
+    response = backend.GenerateResponse(f"{chat_context}\nUser: {prompt}")
+
+    # ✅ If user asks for their name
+    if "what is my name" in prompt.lower() and st.session_state.user_name:
+        response = f"Your name is {st.session_state.user_name}!"
+
+    # ✅ Display assistant's response
+    with st.chat_message("assistant"):
+        st.markdown(response)
+
+    # ✅ Save conversation to history
+    st.session_state.messages.append({"role": "assistant", "content": response})
+    st.session_state.memory.save_context({"input": prompt}, {"output": response})
+    save_chat_history(st.session_state.messages)
+def clear_chat_history():
+    if os.path.exists("chat_history.json"):
+        os.remove("chat_history.json")  # Delete the JSON file
+
+if st.button("🔄 Refresh Chat"):
+    st.session_state.messages = []  # Clear session state
+    clear_chat_history()  # Remove stored chat history
+    st.rerun()  # Refresh UI
