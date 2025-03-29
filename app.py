@@ -35,7 +35,38 @@ if "messages" not in st.session_state:
 if "user_name" not in st.session_state:
     st.session_state.user_name = None  
 
-st.title("Butt Karahi AI Agent")
+# ✅ Language selection (NEW)
+if "language" not in st.session_state:
+    st.session_state.language = "Auto-Detect"
+
+# Language options from backend
+language_options = ["Auto-Detect"] + [lang["name"] for lang in backend.SUPPORTED_LANGUAGES.values()]
+
+st.title("Butt Karahi AI Agent ")
+
+# Language selector in sidebar (NEW)
+with st.sidebar:
+    st.header("Settings")
+    st.session_state.language = st.selectbox(
+        "🌐 Select Language for Communicate with us",
+        language_options,
+        index=language_options.index(st.session_state.language)
+    )
+    
+    if st.button("🔄 Refresh Chat"):
+        st.session_state.messages = []
+        if os.path.exists("chat_memory.json"):
+            os.remove("chat_memory.json")
+        st.rerun()
+
+# Display greeting in selected language (NEW)
+if not st.session_state.messages:
+    lang_code = "en"  # Default to English
+    if st.session_state.language != "Auto-Detect":
+        lang_code = [code for code, config in backend.SUPPORTED_LANGUAGES.items() 
+                    if config["name"] == st.session_state.language][0]
+    greeting = backend.SUPPORTED_LANGUAGES[lang_code]["greeting"]
+    st.session_state.messages.append({"role": "assistant", "content": greeting})
 
 # ✅ Display full chat history
 for message in st.session_state.messages:
@@ -52,9 +83,16 @@ if prompt := st.chat_input("Ask Something About Butt Karahi?"):
     if "my name is" in prompt.lower():
         st.session_state.user_name = prompt.split("my name is")[-1].strip()
 
-    # ✅ Generate response using full chat history
-    chat_context = "\n".join([f"{msg['role']}: {msg['content']}" for msg in st.session_state.messages])
-    response = backend.GenerateResponse(f"{chat_context}\nUser: {prompt}")
+    # Prepare context with language preference (NEW)
+    chat_context = {
+        "messages": "\n".join([f"{msg['role']}: {msg['content']}" for msg in st.session_state.messages]),
+        "language": st.session_state.language
+    }
+
+    # Generate response (modified for language support)
+    response = backend.GenerateResponse(
+        f"{chat_context['messages']}\nUser: {prompt}"
+    )
 
     # ✅ If user asks for their name
     if "what is my name" in prompt.lower() and st.session_state.user_name:
@@ -68,11 +106,3 @@ if prompt := st.chat_input("Ask Something About Butt Karahi?"):
     st.session_state.messages.append({"role": "assistant", "content": response})
     st.session_state.memory.save_context({"input": prompt}, {"output": response})
     save_chat_history(st.session_state.messages)
-def clear_chat_history():
-    if os.path.exists("chat_history.json"):
-        os.remove("chat_history.json")  # Delete the JSON file
-
-if st.button("🔄 Refresh Chat"):
-    st.session_state.messages = []  # Clear session state
-    clear_chat_history()  # Remove stored chat history
-    st.rerun()  # Refresh UI
