@@ -11,7 +11,6 @@ from langdetect import detect
 load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Ensure API key exists
 if not API_KEY:
     raise ValueError("❌ ERROR: GEMINI_API_KEY is missing! Set it in your .env file.")
 
@@ -28,7 +27,6 @@ model = genai.GenerativeModel(
     generation_config=generation_config,
 )
 
-# LangChain Setup
 llm = GoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=API_KEY)
 conversation_memory = ConversationBufferMemory()
 conversation = ConversationChain(llm=llm, memory=conversation_memory)
@@ -130,11 +128,11 @@ def GenerateResponse(input_text: str) -> str:
 
 # Flask App Setup
 app = Flask(__name__)
-CORS(app)  # Enables CORS for all routes
+CORS(app)  
 
 @app.route("/")
 def home():
-    return "✅ Flask Server is Running! Access the chatbot at /chat"
+    return "Flask Server is Running! Access the chatbot at /chat"
 
 @app.route('/chat', methods=['POST'])
 def chatbot():
@@ -143,14 +141,13 @@ def chatbot():
         user_message = data.get("message", "").strip()
 
         if not user_message:
-            return jsonify({"error": "❌ Please provide a valid input message."}), 400
+            return jsonify({"error": " Please provide a valid input message."}), 400
 
-        # Get response from Gemini AI
         bot_response = GenerateResponse(user_message)
         return jsonify({"response": bot_response})
     
     except Exception as e:
-        return jsonify({"error": f"❌ Server Error: {str(e)}"}), 500
+        return jsonify({"error": f" Server Error: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
