@@ -31,7 +31,6 @@ llm = GoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=API_KEY)
 conversation_memory = ConversationBufferMemory()
 conversation = ConversationChain(llm=llm, memory=conversation_memory)
 
-# Language configuration
 SUPPORTED_LANGUAGES = {
     "en": {
         "name": "English",
@@ -126,7 +125,6 @@ def GenerateResponse(input_text: str) -> str:
     except Exception as e:
         return f"❌ ERROR: {str(e)}"
 
-# Flask App Setup
 app = Flask(__name__)
 CORS(app)  
 

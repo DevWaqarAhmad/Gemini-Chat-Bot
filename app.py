@@ -4,7 +4,7 @@ import backend
 import json
 from langchain.memory import ConversationBufferMemory
 
-# ✅ Load chat history from a file
+
 def load_chat_history():
     try:
         with open("chat_memory.json", "r") as file:
@@ -16,30 +16,27 @@ def load_chat_history():
     except (FileNotFoundError, json.JSONDecodeError):
         return []
 
-# ✅ Save chat history to a file
+
 def save_chat_history(history):
     with open("chat_memory.json", "w") as file:
         json.dump(history, file)
 
-# ✅ Initialize memory
+# Initialize memory
 if "memory" not in st.session_state:
     st.session_state.memory = ConversationBufferMemory()
 
-# ✅ Load chat history
+# Load chat history
 if "messages" not in st.session_state:
     stored_history = load_chat_history()
     formatted_history = [{"role": msg["role"], "content": msg["content"]} for msg in stored_history]
     st.session_state.messages = formatted_history
 
-# ✅ Store user name when introduced
+# Store user name when introduced
 if "user_name" not in st.session_state:
     st.session_state.user_name = None  
 
-# ✅ Language selection (NEW)
 if "language" not in st.session_state:
     st.session_state.language = "Auto-Detect"
-
-# Language options from backend
 language_options = ["Auto-Detect"] + [lang["name"] for lang in backend.SUPPORTED_LANGUAGES.values()]
 
 st.title("Butt Karahi AI Agent ")
@@ -59,9 +56,8 @@ with st.sidebar:
             os.remove("chat_memory.json")
         st.rerun()
 
-# Display greeting in selected language (NEW)
 if not st.session_state.messages:
-    lang_code = "en"  # Default to English
+    lang_code = "en"  
     if st.session_state.language != "Auto-Detect":
         lang_code = [code for code, config in backend.SUPPORTED_LANGUAGES.items() 
                     if config["name"] == st.session_state.language][0]
