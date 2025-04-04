@@ -18,7 +18,7 @@ from chat_history import save_chat_to_db, get_chat_history
 
 # API Key for Gemini
 API_KEY = "AIzaSyDuBTqfrpAjTcJFh4kYVtIVAQvlEKMPyco"
-MONGO_URI = "mongodb+srv://devwaqarahmad:1wKXOMmJjouR57Nt@cluster0.fegz8dj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGO_URI = "mongodb+srv://devwaqarahmad:nKuui_t2WMiKtpe@cluster0.fegz8dj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 if not API_KEY:
     raise ValueError("ERROR: GEMINI_API_KEY is missing! Set it in your .env file.")

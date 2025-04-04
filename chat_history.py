@@ -1,7 +1,7 @@
 from datetime import datetime
 from pymongo import MongoClient
 
-MONGO_URI = "mongodb+srv://devwaqarahmad:1wKXOMmJjouR57Nt@cluster0.fegz8dj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGO_URI = "mongodb+srv://devwaqarahmad:nKuui_t2WMiKtpe@cluster0.fegz8dj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URI)
 db = client["chatbot_db"]
 conversations_collection = db["conversations"]
