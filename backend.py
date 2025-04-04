@@ -7,14 +7,26 @@ from langchain_google_genai import GoogleGenerativeAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
 from langdetect import detect
+from pymongo import MongoClient
+from datetime import datetime
 
+# Load environment variables
 #load_dotenv()
-#API_KEY = os.getenv("GEMINI_API_KEY")
+
+# API Key for Gemini
 API_KEY = "AIzaSyDuBTqfrpAjTcJFh4kYVtIVAQvlEKMPyco"
+MONGO_URI = "mongodb+srv://devwaqarahmad:1wKXOMmJjouR57Nt@cluster0.fegz8dj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 if not API_KEY:
-    raise ValueError("❌ ERROR: GEMINI_API_KEY is missing! Set it in your .env file.")
+    raise ValueError(" ERROR: GEMINI_API_KEY is missing! Set it in your .env file.")
 
+# MongoDB Setup
+#MONGO_URI = os.getenv("MONGO_URI")  
+client = MongoClient(MONGO_URI)
+db = client["chatbot_db"]
+conversations_collection = db["conversations"]
+
+# Gemini Configuration
 genai.configure(api_key=API_KEY)
 generation_config = {
     "temperature": 1,
@@ -33,60 +45,19 @@ conversation_memory = ConversationBufferMemory()
 conversation = ConversationChain(llm=llm, memory=conversation_memory)
 
 SUPPORTED_LANGUAGES = {
-    "en": {
-        "name": "English",
-        "prompt": "Respond in English about Butt Karahi's menu, locations, and prices.",
-        "greeting": "Hello! How can I help you today?"
-    },
-    "ur": {
-        "name": "Urdu",
-        "prompt": "Butt Karahi کے مینو، مقامات اور قیمتوں کے بارے میں اردو میں جواب دیں۔",
-        "greeting": "ہیلو! آج میں آپ کی کس طرح مدد کر سکتا ہوں؟"
-    },
-    "ar": {
-        "name": "Arabic",
-        "prompt": "الرد بالعربية حول قائمة مطعم بط كراهي والمواقع والأسعار.",
-        "greeting": "مرحبًا! كيف يمكنني مساعدتك اليوم؟"
-    },
-    "hi": {
-        "name": "Hindi",
-        "prompt": "मेनू, स्थानों और कीमतों के बारे में हिंदी में उत्तर दें।",
-        "greeting": "नमस्ते! आज मैं आपकी कैसे मदद कर सकता हूँ?"
-    },
-    "es": {
-        "name": "Spanish",
-        "prompt": "Responde en español sobre el menú, ubicaciones y precios de Butt Karahi.",
-        "greeting": "¡Hola! ¿Cómo puedo ayudarte hoy?"
-    },
-    "fr": {
-        "name": "French",
-        "prompt": "Répondez en français sur le menu, les emplacements et les prix de Butt Karahi.",
-        "greeting": "Bonjour ! Comment puis-je vous aider aujourd'hui ?"
-    },
-    "zh-cn": {
-        "name": "Chinese",
-        "prompt": "用中文回答有关Butt Karahi的菜单、位置和价格。",
-        "greeting": "你好！今天有什么可以帮您的吗？"
-    },
-    "bn": {
-        "name": "Bengali",
-        "prompt": "Butt Karahi-এর মেনু, অবস্থান এবং মূল্য সম্পর্কে বাংলায় উত্তর দিন।",
-        "greeting": "হ্যালো! আজ আমি আপনাকে কিভাবে সাহায্য করতে পারি?"
-    },
-    "pa": {
-        "name": "Punjabi",
-        "prompt": "Butt Karahi ਦੇ ਮੀਨੂ, ਟਿਕਾਣਿਆਂ ਅਤੇ ਕੀਮਤਾਂ ਬਾਰੇ ਪੰਜਾਬੀ ਵਿੱਚ ਜਵਾਬ ਦਿਓ।",
-        "greeting": "ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਤੁਹਾਡੀ ਆਜ਼ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ?"
-    },
-    "tr": {
-        "name": "Turkish",
-        "prompt": "Butt Karahi'nin menüsü, konumları ve fiyatları hakkında Türkçe yanıt verin.",
-        "greeting": "Merhaba! Bugün size nasıl yardımcı olabilirim?"
-    }
+    "en": {"name": "English", "prompt": "Respond in English about Butt Karahi's menu, locations, and prices.", "greeting": "Hello! How can I help you today?"},
+    "ur": {"name": "Urdu", "prompt": "Butt Karahi کے مینو، مقامات اور قیمتوں کے بارے میں اردو میں جواب دیں۔", "greeting": "ہیلو! آج میں آپ کی کس طرح مدد کر سکتا ہوں؟"},
+    "ar": {"name": "Arabic", "prompt": "الرد بالعربية حول قائمة مطعم بط كراهي والمواقع والأسعار.", "greeting": "مرحبًا! كيف يمكنني مساعدتك اليوم؟"},
+    "hi": {"name": "Hindi", "prompt": "मेनू, स्थानों और कीमतों के बारे में हिंदी में उत्तर दें।", "greeting": "नमस्ते! आज मैं आपकी कैसे मदद कर सकता हूँ?"},
+    "es": {"name": "Spanish", "prompt": "Responde en español sobre el menú, ubicaciones y precios de Butt Karahi.", "greeting": "¡Hola! ¿Cómo puedo ayudarte hoy?"},
+    "fr": {"name": "French", "prompt": "Répondez en français sur le menu, les emplacements et les prix de Butt Karahi.", "greeting": "Bonjour ! Comment puis-je vous aider aujourd'hui ?"},
+    "zh-cn": {"name": "Chinese", "prompt": "用中文回答有关Butt Karahi的菜单、位置和价格。", "greeting": "你好！今天有什么可以帮您的吗？"},
+    "bn": {"name": "Bengali", "prompt": "Butt Karahi-এর মেনু, অবস্থান এবং মূল্য সম্পর্কে বাংলায় উত্তর দিন।", "greeting": "হ্যালো! আজ আমি আপনাকে কিভাবে সাহায্য করতে পারি?"},
+    "pa": {"name": "Punjabi", "prompt": "Butt Karahi ਦੇ ਮੀਨੂ, ਟਿਕਾਣਿਆਂ ਅਤੇ ਕੀਮਤਾਂ ਬਾਰੇ ਪੰਜਾਬੀ ਵਿੱਚ ਜਵਾਬ ਦਿਓ।", "greeting": "ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਤੁਹਾਡੀ ਆਜ਼ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ?"},
+    "tr": {"name": "Turkish", "prompt": "Butt Karahi'nin menüsü, konumları ve fiyatları hakkında Türkçe yanıt verin.", "greeting": "Merhaba! Bugün size nasıl yardımcı olabilirim?"}
 }
 
 def detect_language(text: str) -> str:
-    """Detects language and falls back to English if unsupported."""
     try:
         lang = detect(text)
         return lang if lang in SUPPORTED_LANGUAGES else "en"
@@ -94,11 +65,9 @@ def detect_language(text: str) -> str:
         return "en"
 
 def GenerateResponse(input_text: str) -> str:
-    """Generates a multilingual response based on user input."""
     try:
         user_lang = detect_language(input_text)
         lang_config = SUPPORTED_LANGUAGES.get(user_lang, SUPPORTED_LANGUAGES["en"])
-        
         response = model.generate_content([
             "System: " + lang_config["prompt"],
             "input: Who are you?",
@@ -126,8 +95,25 @@ def GenerateResponse(input_text: str) -> str:
     except Exception as e:
         return f"❌ ERROR: {str(e)}"
 
+def save_chat_to_db(user_id, user_input, bot_response):
+    conversations_collection.insert_one({
+        "user_id": user_id,
+        "timestamp": datetime.utcnow(),
+        "messages": [
+            {"role": "user", "text": user_input},
+            {"role": "bot", "text": bot_response}
+        ]
+    })
+
+def get_chat_history(user_id):
+    chats = conversations_collection.find({"user_id": user_id}).sort("timestamp")
+    history = []
+    for chat in chats:
+        history.extend(chat["messages"])
+    return history
+
 app = Flask(__name__)
-CORS(app)  
+CORS(app)
 
 @app.route("/")
 def home():
@@ -138,13 +124,21 @@ def chatbot():
     try:
         data = request.json
         user_message = data.get("message", "").strip()
+        user_id = data.get("user_id", "guest")
 
         if not user_message:
             return jsonify({"error": " Please provide a valid input message."}), 400
 
         bot_response = GenerateResponse(user_message)
-        return jsonify({"response": bot_response})
-    
+
+        # Save to MongoDB
+        save_chat_to_db(user_id, user_message, bot_response)
+
+        # Optional: return full chat history
+        chat_history = get_chat_history(user_id)
+
+        return jsonify({"response": bot_response, "history": chat_history})
+
     except Exception as e:
         return jsonify({"error": f" Server Error: {str(e)}"}), 500
 
