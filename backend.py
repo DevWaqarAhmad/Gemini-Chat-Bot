@@ -8,8 +8,9 @@ from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
 from langdetect import detect
 
-load_dotenv()
-API_KEY = os.getenv("GEMINI_API_KEY")
+#load_dotenv()
+#API_KEY = os.getenv("GEMINI_API_KEY")
+API_KEY = "AIzaSyDuBTqfrpAjTcJFh4kYVtIVAQvlEKMPyco"
 
 if not API_KEY:
     raise ValueError("❌ ERROR: GEMINI_API_KEY is missing! Set it in your .env file.")
