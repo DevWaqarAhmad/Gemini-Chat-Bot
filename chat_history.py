@@ -26,14 +26,15 @@ def get_chat_history(user_id):
     return history
 
 # Example of how GenerateResponse can use the saved chat history
-def GenerateResponse(user_input, user_id):
-    # Retrieve the chat history for the given user_id
-    chat_history = get_chat_history(user_id)
-    
-    # Process the user's input along with the chat history to generate a response
-    bot_response = f"Bot response to: {user_input}"  # Replace with your actual logic for generating responses
-    
-    # Save the conversation to the database
-    save_chat_to_db(user_id, user_input, bot_response)
-    
+def GenerateResponse(user_input, user_id=None):
+    # Optionally retrieve chat history for personalization
+    chat_history = get_chat_history(user_id) if user_id else []
+
+    # Your logic to generate a bot response
+    bot_response = f"Bot response to: {user_input}"  # Replace with real response logic
+
+    # Save conversation if user_id is provided
+    if user_id:
+        save_chat_to_db(user_id, user_input, bot_response)
+
     return bot_response
