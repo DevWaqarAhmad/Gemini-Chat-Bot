@@ -1,4 +1,5 @@
 import os
+import json
 import google.generativeai as genai
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -11,17 +12,17 @@ from pymongo import MongoClient
 from datetime import datetime
 
 # Load environment variables
-#load_dotenv()
+# load_dotenv()
 
 # API Key for Gemini
 API_KEY = "AIzaSyDuBTqfrpAjTcJFh4kYVtIVAQvlEKMPyco"
 MONGO_URI = "mongodb+srv://devwaqarahmad:1wKXOMmJjouR57Nt@cluster0.fegz8dj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 if not API_KEY:
-    raise ValueError(" ERROR: GEMINI_API_KEY is missing! Set it in your .env file.")
+    raise ValueError("ERROR: GEMINI_API_KEY is missing! Set it in your .env file.")
 
 # MongoDB Setup
-#MONGO_URI = os.getenv("MONGO_URI")  
+# MONGO_URI = os.getenv("MONGO_URI")  
 client = MongoClient(MONGO_URI)
 db = client["chatbot_db"]
 conversations_collection = db["conversations"]
@@ -53,7 +54,7 @@ SUPPORTED_LANGUAGES = {
     "fr": {"name": "French", "prompt": "Répondez en français sur le menu, les emplacements et les prix de Butt Karahi.", "greeting": "Bonjour ! Comment puis-je vous aider aujourd'hui ?"},
     "zh-cn": {"name": "Chinese", "prompt": "用中文回答有关Butt Karahi的菜单、位置和价格。", "greeting": "你好！今天有什么可以帮您的吗？"},
     "bn": {"name": "Bengali", "prompt": "Butt Karahi-এর মেনু, অবস্থান এবং মূল্য সম্পর্কে বাংলায় উত্তর দিন।", "greeting": "হ্যালো! আজ আমি আপনাকে কিভাবে সাহায্য করতে পারি?"},
-    "pa": {"name": "Punjabi", "prompt": "Butt Karahi ਦੇ ਮੀਨੂ, ਟਿਕਾਣਿਆਂ ਅਤੇ ਕੀਮਤਾਂ ਬਾਰੇ ਪੰਜਾਬੀ ਵਿੱਚ ਜਵਾਬ ਦਿਓ।", "greeting": "ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਤੁਹਾਡੀ ਆਜ਼ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ?"},
+    "pa": {"name": "Punjabi", "prompt": "Butt Karahi ਦੇ ਮੀਨੂ, ਟਿਕਾਣਿਆਂ ਅਤੇ ਕੀਮਤਾਂ ਬਾਰੇ ਪੰਜਾਬੀ ਵਿੱਚ ਜਵਾਬ ਦਿਓ।", "greeting": "ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਤੁਹਾਡੀ ਆਜ਼ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ؟"},
     "tr": {"name": "Turkish", "prompt": "Butt Karahi'nin menüsü, konumları ve fiyatları hakkında Türkçe yanıt verin.", "greeting": "Merhaba! Bugün size nasıl yardımcı olabilirim?"}
 }
 
@@ -127,7 +128,7 @@ def chatbot():
         user_id = data.get("user_id", "guest")
 
         if not user_message:
-            return jsonify({"error": " Please provide a valid input message."}), 400
+            return jsonify({"error": "Please provide a valid input message."}), 400
 
         bot_response = GenerateResponse(user_message)
 
@@ -140,7 +141,7 @@ def chatbot():
         return jsonify({"response": bot_response, "history": chat_history})
 
     except Exception as e:
-        return jsonify({"error": f" Server Error: {str(e)}"}), 500
+        return jsonify({"error": f"Server Error: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
