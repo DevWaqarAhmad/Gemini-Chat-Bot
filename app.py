@@ -1,9 +1,9 @@
 import streamlit as st
 import os
+import uuid
 import backend
 import json
 from langchain.memory import ConversationBufferMemory
-
 
 def load_chat_history():
     try:
@@ -15,7 +15,6 @@ def load_chat_history():
             return history if isinstance(history, list) else []
     except (FileNotFoundError, json.JSONDecodeError):
         return []
-
 
 def save_chat_history(history):
     with open("chat_memory.json", "w") as file:
@@ -34,6 +33,12 @@ if "messages" not in st.session_state:
 # Store user name when introduced
 if "user_name" not in st.session_state:
     st.session_state.user_name = None  
+
+# Ensure a unique user_id for the session
+if "user_id" not in st.session_state:
+    st.session_state.user_id = str(uuid.uuid4())  # Generate a unique user ID for the session
+
+user_id = st.session_state.user_id  # Use the user_id from session state
 
 if "language" not in st.session_state:
     st.session_state.language = "Auto-Detect"
@@ -87,7 +92,8 @@ if prompt := st.chat_input("Ask Something About Butt Karahi?"):
 
     # Generate response (modified for language support)
     response = backend.GenerateResponse(
-        f"{chat_context['messages']}\nUser: {prompt}"
+        f"{chat_context['messages']}\nUser: {prompt}",
+        user_id=user_id  # Pass the user_id along with the message
     )
 
     # ✅ If user asks for their name

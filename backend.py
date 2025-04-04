@@ -1,5 +1,6 @@
 import os
 import json
+import uuid
 import google.generativeai as genai
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -152,7 +153,11 @@ def chatbot():
     try:
         data = request.json
         user_message = data.get("message", "").strip()
-        user_id = data.get("user_id", "guest")  # If no user_id is provided, default to "guest"
+        user_id = data.get("user_id", None)  # Ensure user_id is passed with the request
+
+        if not user_id:
+            # If no user_id is provided, generate a unique one, maybe using session ID or a UUID
+            user_id = str(uuid.uuid4())
 
         if not user_message:
             return jsonify({"error": "Please provide a valid input message."}), 400
@@ -160,10 +165,10 @@ def chatbot():
         # Generate bot response
         bot_response = GenerateResponse(user_message)
 
-        # Save to MongoDB
+        # Save to MongoDB with the unique user_id
         save_chat_to_db(user_id, user_message, bot_response)
 
-        # Optional: return full chat history
+        # Retrieve user-specific chat history
         chat_history = get_chat_history(user_id)
 
         return jsonify({"response": bot_response, "history": chat_history})
