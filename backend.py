@@ -9,26 +9,13 @@ from langchain_google_genai import GoogleGenerativeAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
 from langdetect import detect
-from pymongo import MongoClient
 from datetime import datetime
-from chat_history import save_chat_to_db, get_chat_history
-
-
-# Load environment variables
-# load_dotenv()
 
 # API Key for Gemini
 API_KEY = "AIzaSyDuBTqfrpAjTcJFh4kYVtIVAQvlEKMPyco"
-MONGO_URI = "mongodb+srv://devwaqarahmad:nKuui_t2WMiKtpe@cluster0.fegz8dj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 if not API_KEY:
     raise ValueError("ERROR: GEMINI_API_KEY is missing! Set it in your .env file.")
-
-# MongoDB Setup
-# MONGO_URI = os.getenv("MONGO_URI")  
-client = MongoClient(MONGO_URI)
-db = client["chatbot_db"]
-conversations_collection = db["conversations"]
 
 # Directory for storing user chat histories in separate files
 CHAT_HISTORY_DIR = "chat_history"
@@ -63,7 +50,7 @@ SUPPORTED_LANGUAGES = {
     "fr": {"name": "French", "prompt": "Répondez en français sur le menu, les emplacements et les prix de Butt Karahi.", "greeting": "Bonjour ! Comment puis-je vous aider aujourd'hui ?"},
     "zh-cn": {"name": "Chinese", "prompt": "用中文回答有关Butt Karahi的菜单、位置和价格。", "greeting": "你好！今天有什么可以帮您的吗？"},
     "bn": {"name": "Bengali", "prompt": "Butt Karahi-এর মেনু, অবস্থান এবং মূল্য সম্পর্কে বাংলায় উত্তর দিন।", "greeting": "হ্যালো! আজ আমি আপনাকে কিভাবে সাহায্য করতে পারি?"},
-    "pa": {"name": "Punjabi", "prompt": "Butt Karahi ਦੇ ਮੀਨੂ, ਟਿਕਾਣਿਆਂ ਅਤੇ ਕੀਮਤਾਂ ਬਾਰੇ ਪੰਜਾਬੀ ਵਿੱਚ ਜਵਾਬ ਦਿਓ।", "greeting": "ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਤੁਹਾਡੀ ਆਜ਼ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ؟"},
+    "pa": {"name": "Punjabi", "prompt": "Butt Karahi ਦੇ ਮੀਨੂ, ਟਿਕਾਣਿਆਂ ਅਤੇ ਕੀਮਤਾਂ ਬਾਰੇ ਪੰਜਾਬੀ ਵਿੱਚ ਜਵਾਬ ਦਿਓ۔", "greeting": "ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਤੁਹਾਡੀ ਆਜ਼ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ؟"},
     "tr": {"name": "Turkish", "prompt": "Butt Karahi'nin menüsü, konumları ve fiyatları hakkında Türkçe yanıt verin.", "greeting": "Merhaba! Bugün size nasıl yardımcı olabilirim?"}
 }
 
@@ -78,7 +65,7 @@ def GenerateResponse(input_text: str) -> str:
     try:
         user_lang = detect_language(input_text)
         lang_config = SUPPORTED_LANGUAGES.get(user_lang, SUPPORTED_LANGUAGES["en"])
-        response = model.generate_content([ 
+        response = model.generate_content([
             "System: " + lang_config["prompt"],
             "input: Who are you?",
             "output: I am an AI agent of Butt Karahi. I will help you choose the best menu item for you.",
@@ -111,13 +98,11 @@ def save_chat_to_file(user_id, user_input, bot_response):
     
     # Check if the file already exists
     if os.path.exists(chat_file):
-        # Load existing chat history
         with open(chat_file, "r") as f:
             chat_history = json.load(f)
     else:
         chat_history = []
 
-    # Add the new messages to the history
     chat_history.append({
         "timestamp": datetime.utcnow().isoformat(),
         "messages": [
@@ -126,14 +111,13 @@ def save_chat_to_file(user_id, user_input, bot_response):
         ]
     })
 
-    # Save the updated chat history to the file
     with open(chat_file, "w") as f:
         json.dump(chat_history, f, indent=4)
 
 # Retrieve user conversation history from a JSON file
 def get_chat_history(user_id):
     chat_file = os.path.join(CHAT_HISTORY_DIR, f"user_{user_id}_chat.json")
-    
+
     if os.path.exists(chat_file):
         with open(chat_file, "r") as f:
             chat_history = json.load(f)
@@ -153,29 +137,23 @@ def chatbot():
     try:
         data = request.json
         user_message = data.get("message", "").strip()
-        user_id = data.get("user_id", None)  # Ensure user_id is passed with the request
+        user_id = data.get("user_id", None)
 
         if not user_id:
-            # If no user_id is provided, generate a unique one, maybe using session ID or a UUID
             user_id = str(uuid.uuid4())
 
         if not user_message:
             return jsonify({"error": "Please provide a valid input message."}), 400
 
-        # Generate bot response
         bot_response = GenerateResponse(user_message)
 
-        # Save to MongoDB with the unique user_id
-        save_chat_to_db(user_id, user_message, bot_response)
-
-        # Retrieve user-specific chat history
+        save_chat_to_file(user_id, user_message, bot_response)
         chat_history = get_chat_history(user_id)
 
         return jsonify({"response": bot_response, "history": chat_history})
 
     except Exception as e:
         return jsonify({"error": f"Server Error: {str(e)}"}), 500
-
 
 if __name__ == '__main__':
     app.run(debug=True)
