@@ -10,6 +10,8 @@ from langchain.memory import ConversationBufferMemory
 from langdetect import detect
 from pymongo import MongoClient
 from datetime import datetime
+from chat_history import save_chat_to_db, get_chat_history
+
 
 # Load environment variables
 # load_dotenv()
@@ -26,6 +28,12 @@ if not API_KEY:
 client = MongoClient(MONGO_URI)
 db = client["chatbot_db"]
 conversations_collection = db["conversations"]
+
+# Directory for storing user chat histories in separate files
+CHAT_HISTORY_DIR = "chat_history"
+
+if not os.path.exists(CHAT_HISTORY_DIR):
+    os.makedirs(CHAT_HISTORY_DIR)
 
 # Gemini Configuration
 genai.configure(api_key=API_KEY)
@@ -69,7 +77,7 @@ def GenerateResponse(input_text: str) -> str:
     try:
         user_lang = detect_language(input_text)
         lang_config = SUPPORTED_LANGUAGES.get(user_lang, SUPPORTED_LANGUAGES["en"])
-        response = model.generate_content([
+        response = model.generate_content([ 
             "System: " + lang_config["prompt"],
             "input: Who are you?",
             "output: I am an AI agent of Butt Karahi. I will help you choose the best menu item for you.",
@@ -96,22 +104,41 @@ def GenerateResponse(input_text: str) -> str:
     except Exception as e:
         return f"❌ ERROR: {str(e)}"
 
-def save_chat_to_db(user_id, user_input, bot_response):
-    conversations_collection.insert_one({
-        "user_id": user_id,
-        "timestamp": datetime.utcnow(),
+# Save user conversation to a JSON file
+def save_chat_to_file(user_id, user_input, bot_response):
+    chat_file = os.path.join(CHAT_HISTORY_DIR, f"user_{user_id}_chat.json")
+    
+    # Check if the file already exists
+    if os.path.exists(chat_file):
+        # Load existing chat history
+        with open(chat_file, "r") as f:
+            chat_history = json.load(f)
+    else:
+        chat_history = []
+
+    # Add the new messages to the history
+    chat_history.append({
+        "timestamp": datetime.utcnow().isoformat(),
         "messages": [
             {"role": "user", "text": user_input},
             {"role": "bot", "text": bot_response}
         ]
     })
 
+    # Save the updated chat history to the file
+    with open(chat_file, "w") as f:
+        json.dump(chat_history, f, indent=4)
+
+# Retrieve user conversation history from a JSON file
 def get_chat_history(user_id):
-    chats = conversations_collection.find({"user_id": user_id}).sort("timestamp")
-    history = []
-    for chat in chats:
-        history.extend(chat["messages"])
-    return history
+    chat_file = os.path.join(CHAT_HISTORY_DIR, f"user_{user_id}_chat.json")
+    
+    if os.path.exists(chat_file):
+        with open(chat_file, "r") as f:
+            chat_history = json.load(f)
+        return chat_history
+    else:
+        return []
 
 app = Flask(__name__)
 CORS(app)
@@ -125,11 +152,12 @@ def chatbot():
     try:
         data = request.json
         user_message = data.get("message", "").strip()
-        user_id = data.get("user_id", "guest")
+        user_id = data.get("user_id", "guest")  # If no user_id is provided, default to "guest"
 
         if not user_message:
             return jsonify({"error": "Please provide a valid input message."}), 400
 
+        # Generate bot response
         bot_response = GenerateResponse(user_message)
 
         # Save to MongoDB
@@ -142,6 +170,7 @@ def chatbot():
 
     except Exception as e:
         return jsonify({"error": f"Server Error: {str(e)}"}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
