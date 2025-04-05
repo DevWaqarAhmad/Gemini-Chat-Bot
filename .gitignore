@@ -1,3 +1,5 @@
 venv/
 .env
 __pycache__
+chat_memory.json
+chat_history
