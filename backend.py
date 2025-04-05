@@ -104,7 +104,7 @@ def save_chat_to_file(user_id, user_input, bot_response):
         chat_history = []
 
     chat_history.append({
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.isoformat(),
         "messages": [
             {"role": "user", "text": user_input},
             {"role": "bot", "text": bot_response}
