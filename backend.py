@@ -65,6 +65,7 @@ def GenerateResponse(input_text: str) -> str:
     try:
         user_lang = detect_language(input_text)
         lang_config = SUPPORTED_LANGUAGES.get(user_lang, SUPPORTED_LANGUAGES["en"])
+        # Raheel: here you need you use the model where you have memory.
         response = model.generate_content([
             "System: " + lang_config["prompt"],
             "input: Who are you?",
