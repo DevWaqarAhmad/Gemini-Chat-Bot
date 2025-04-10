@@ -60,7 +60,7 @@ def detect_language(text: str) -> str:
         return lang if lang in SUPPORTED_LANGUAGES else "en"
     except Exception:
         return "en"
-def generate_response(input_text: str, language: str) -> str:
+def generate_response(input_text: str, language: str, context: str = "") -> str:
     try:
         # Detect the language if it's not passed as argument
         if language == "Auto-Detect":
@@ -69,6 +69,9 @@ def generate_response(input_text: str, language: str) -> str:
             user_lang = language
         
         lang_config = SUPPORTED_LANGUAGES.get(user_lang, SUPPORTED_LANGUAGES["en"])
+
+        # Construct the full prompt by combining the context and the input text
+        full_prompt = f"{context}\ninput: {input_text}\noutput:"
 
         # Generate response using the model with memory
         response = model.generate_content([  # Assuming you're using the generative model here
@@ -91,12 +94,13 @@ def generate_response(input_text: str, language: str) -> str:
             "output: Established in 1979 in Lahore, Butt Karahi is known for its authentic taste, 100% halal meat, and hand-picked spices.",
             "input: Timing and Contact Number",
             "output: Mississauga Branch: +1 416-494-5477 | Pickering Branch: +1 905-839-0002",
-            f"input: {input_text}",
-            "output: ",
+            full_prompt
         ])
+
         return response.text
     except Exception as e:
         return f"❌ ERROR: {str(e)}"
+
 
 
 # API Routes
