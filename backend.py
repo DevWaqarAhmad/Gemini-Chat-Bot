@@ -1,6 +1,4 @@
 import os
-import json
-import uuid
 import google.generativeai as genai
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -9,21 +7,21 @@ from langchain_google_genai import GoogleGenerativeAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
 from langdetect import detect
-from datetime import datetime
 
-# API Key for Gemini
+# Initialize Flask App
+app = Flask(__name__)
+CORS(app)
+
+# Load Environment Variables (Optional if you use .env)
+# load_dotenv()
+
+# API Key for Google Generative AI
 API_KEY = "AIzaSyDuBTqfrpAjTcJFh4kYVtIVAQvlEKMPyco"
 
 if not API_KEY:
-    raise ValueError("ERROR: GEMINI_API_KEY is missing! Set it in your .env file.")
+    raise ValueError("ERROR: GEMINI_API_KEY is missing! Set it in your environment.")
 
-# Directory for storing user chat histories in separate files
-CHAT_HISTORY_DIR = "chat_history"
-
-if not os.path.exists(CHAT_HISTORY_DIR):
-    os.makedirs(CHAT_HISTORY_DIR)
-
-# Gemini Configuration
+# Gemini Model Configuration
 genai.configure(api_key=API_KEY)
 generation_config = {
     "temperature": 1,
@@ -36,11 +34,12 @@ model = genai.GenerativeModel(
     model_name="gemini-1.5-flash",
     generation_config=generation_config,
 )
-
+# Set up LangChain LLM and Memory
 llm = GoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=API_KEY)
-conversation_memory = ConversationBufferMemory()
-conversation = ConversationChain(llm=llm, memory=conversation_memory)
+memory = ConversationBufferMemory()
+conversation = ConversationChain(llm=llm, memory=memory)
 
+# Supported Languages
 SUPPORTED_LANGUAGES = {
     "en": {"name": "English", "prompt": "Respond in English about Butt Karahi's menu, locations, and prices.", "greeting": "Hello! How can I help you today?"},
     "ur": {"name": "Urdu", "prompt": "Butt Karahi کے مینو، مقامات اور قیمتوں کے بارے میں اردو میں جواب دیں۔", "greeting": "ہیلو! آج میں آپ کی کس طرح مدد کر سکتا ہوں؟"},
@@ -50,22 +49,29 @@ SUPPORTED_LANGUAGES = {
     "fr": {"name": "French", "prompt": "Répondez en français sur le menu, les emplacements et les prix de Butt Karahi.", "greeting": "Bonjour ! Comment puis-je vous aider aujourd'hui ?"},
     "zh-cn": {"name": "Chinese", "prompt": "用中文回答有关Butt Karahi的菜单、位置和价格。", "greeting": "你好！今天有什么可以帮您的吗？"},
     "bn": {"name": "Bengali", "prompt": "Butt Karahi-এর মেনু, অবস্থান এবং মূল্য সম্পর্কে বাংলায় উত্তর দিন।", "greeting": "হ্যালো! আজ আমি আপনাকে কিভাবে সাহায্য করতে পারি?"},
-    "pa": {"name": "Punjabi", "prompt": "Butt Karahi ਦੇ ਮੀਨੂ, ਟਿਕਾਣਿਆਂ ਅਤੇ ਕੀਮਤਾਂ ਬਾਰੇ ਪੰਜਾਬੀ ਵਿੱਚ ਜਵਾਬ ਦਿਓ۔", "greeting": "ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਤੁਹਾਡੀ ਆਜ਼ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ؟"},
+    "pa": {"name": "Punjabi", "prompt": "Butt Karahi ਦੇ ਮੀਨੂ, ਟਿਕਾਣਿਆਂ ਅਤੇ ਕੀਮਤਾਂ ਬਾਰੇ ਪੰਜਾਬੀ ਵਿੱਚ ਜਵਾਬ ਦਿਓ।", "greeting": "ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਤੁਹਾਡੀ ਆਜ਼ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ؟"},
     "tr": {"name": "Turkish", "prompt": "Butt Karahi'nin menüsü, konumları ve fiyatları hakkında Türkçe yanıt verin.", "greeting": "Merhaba! Bugün size nasıl yardımcı olabilirim?"}
 }
 
+# Helper Functions
 def detect_language(text: str) -> str:
     try:
         lang = detect(text)
         return lang if lang in SUPPORTED_LANGUAGES else "en"
-    except:
+    except Exception:
         return "en"
-
-def GenerateResponse(input_text: str) -> str:
+def generate_response(input_text: str, language: str) -> str:
     try:
-        user_lang = detect_language(input_text)
+        # Detect the language if it's not passed as argument
+        if language == "Auto-Detect":
+            user_lang = detect_language(input_text)
+        else:
+            user_lang = language
+        
         lang_config = SUPPORTED_LANGUAGES.get(user_lang, SUPPORTED_LANGUAGES["en"])
-        response = model.generate_content([
+
+        # Generate response using the model with memory
+        response = model.generate_content([  # Assuming you're using the generative model here
             "System: " + lang_config["prompt"],
             "input: Who are you?",
             "output: I am an AI agent of Butt Karahi. I will help you choose the best menu item for you.",
@@ -92,68 +98,31 @@ def GenerateResponse(input_text: str) -> str:
     except Exception as e:
         return f"❌ ERROR: {str(e)}"
 
-# Save user conversation to a JSON file
-def save_chat_to_file(user_id, user_input, bot_response):
-    chat_file = os.path.join(CHAT_HISTORY_DIR, f"user_{user_id}_chat.json")
-    
-    #Check if the file already exists
-    if os.path.exists(chat_file):
-        with open(chat_file, "r") as f:
-            chat_history = json.load(f)
-    else:
-        chat_history = []
 
-    chat_history.append({
-        "timestamp": datetime.isoformat(),
-        "messages": [
-            {"role": "user", "text": user_input},
-            {"role": "bot", "text": bot_response}
-        ]
-    })
-
-    with open(chat_file, "w") as f:
-        json.dump(chat_history, f, indent=4)
-
-# Retrieve user conversation history from a JSON file
-def get_chat_history(user_id):
-    chat_file = os.path.join(CHAT_HISTORY_DIR, f"user_{user_id}_chat.json")
-
-    if os.path.exists(chat_file):
-        with open(chat_file, "r") as f:
-            chat_history = json.load(f)
-        return chat_history
-    else:
-        return []
-
-app = Flask(__name__)
-CORS(app)
-
-@app.route("/")
-def home():
-    return "Flask Server is Running! Access the chatbot at /chat"
-
+# API Routes
 @app.route('/chat', methods=['POST'])
-def chatbot():
-    try:
-        data = request.json
-        user_message = data.get("message", "").strip()
-        user_id = data.get("user_id", None)
+def chat():
+    # Get user input directly from the request body
+    user_input = request.form.get('message')  # Getting message from the frontend form
+    
+    if not user_input:
+        return jsonify({'error': 'No message provided.'}), 400
 
-        if not user_id:
-            user_id = str(uuid.uuid4())
+    # Detect language of the input
+    user_lang = detect_language(user_input)
+    lang_config = SUPPORTED_LANGUAGES.get(user_lang, SUPPORTED_LANGUAGES["en"])
 
-        if not user_message:
-            return jsonify({"error": "Please provide a valid input message."}), 400
+    system_prompt = lang_config["prompt"]
 
-        bot_response = GenerateResponse(user_message)
+    # Generate response using LangChain's conversation memory
+    full_input = f"{system_prompt}\nUser: {user_input}"
+    bot_response = conversation.run(full_input)
 
-        save_chat_to_file(user_id, user_message, bot_response)
-        chat_history = get_chat_history(user_id)
+    return jsonify({'response': bot_response})
 
-        return jsonify({"response": bot_response, "history": chat_history})
-
-    except Exception as e:
-        return jsonify({"error": f"Server Error: {str(e)}"}), 500
+@app.route('/', methods=['GET'])
+def home():
+    return "Chatbot is running!"
 
 if __name__ == '__main__':
     app.run(debug=True)
