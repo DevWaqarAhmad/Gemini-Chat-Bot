@@ -69,12 +69,17 @@ def generate_response(input_text: str, language: str, context: str = "") -> str:
             user_lang = language
         
         lang_config = SUPPORTED_LANGUAGES.get(user_lang, SUPPORTED_LANGUAGES["en"])
+<<<<<<< HEAD
 
         # Construct the full prompt by combining the context and the input text
         full_prompt = f"{context}\ninput: {input_text}\noutput:"
 
         # Generate response using the model with memory
         response = model.generate_content([  # Assuming you're using the generative model here
+=======
+        # Raheel: here you need you use the model where you have memory.
+        response = model.generate_content([
+>>>>>>> 717d3c8ef1766aae9a9fd91735356a2cbd2c1ccc
             "System: " + lang_config["prompt"],
             "input: Who are you?",
             "output: I am an AI agent of Butt Karahi. I will help you choose the best menu item for you.",

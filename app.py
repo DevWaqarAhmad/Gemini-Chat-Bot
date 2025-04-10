@@ -19,7 +19,7 @@ if "language" not in st.session_state:
 user_id = st.session_state.user_id
 language_options = ["Auto-Detect"] + [lang["name"] for lang in backend.SUPPORTED_LANGUAGES.values()]
 
-st.title("Butt Karahi AI Agent ")
+st.title("Butt Karahi AI Agent")
 
 # Sidebar settings
 with st.sidebar:
@@ -36,12 +36,11 @@ with st.sidebar:
 
 # Initial greeting
 if not st.session_state.messages:
-    lang_code = "en"
-    if st.session_state.language != "Auto-Detect":
-        lang_code = next(
-            (code for code, val in backend.SUPPORTED_LANGUAGES.items() if val["name"] == st.session_state.language),
-            "en"
-        )
+    lang_code = "en" if st.session_state.language == "Auto-Detect" else next(
+        (code for code, val in backend.SUPPORTED_LANGUAGES.items() if val["name"] == st.session_state.language),
+        "en"
+    )
+    
     greeting = backend.SUPPORTED_LANGUAGES.get(lang_code, backend.SUPPORTED_LANGUAGES["en"])["greeting"]
     st.session_state.messages.append({"role": "assistant", "content": greeting})
 
@@ -64,15 +63,13 @@ if prompt := st.chat_input("Ask Something About Butt Karahi?"):
     if "what is my name" in prompt.lower() and st.session_state.user_name:
         response = f"Your name is {st.session_state.user_name}!"
     else:
-        # Call backend clean function with memory management
-        response = backend.generate_response(prompt, st.session_state.language)
+        # Call backend generate_response function with entire chat history context
+        full_chat = "\n".join([message["content"] for message in st.session_state.messages])
+        response = backend.generate_response(prompt, st.session_state.language, context=full_chat)
 
     # Show assistant reply
     with st.chat_message("assistant"):
         st.markdown(response)
 
-    # Save the assistant's response in memory (handled by LangChain backend memory)
+    # Save assistant's response in memory (handled by LangChain's memory)
     st.session_state.messages.append({"role": "assistant", "content": response})
-
-    # Save to LangChain memory
-    #backend.save_context(prompt, response)
