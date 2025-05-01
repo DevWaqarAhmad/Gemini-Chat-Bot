@@ -3,6 +3,11 @@ import os
 import uuid
 import backend
 
+
+st.set_page_config(
+    page_title="Butt Karahi AI Agent",
+    layout="wide"
+)
 # Initialize session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
