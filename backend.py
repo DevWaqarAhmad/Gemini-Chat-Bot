@@ -18,7 +18,8 @@ CORS(app)
 # load_dotenv()
 
 # API Key for Google Generative AI
-API_KEY = "AIzaSyBIO9WyVWUZHxS07chZ2E-LOXQ0YOqB_yU"
+API_KEY = os.getenv("GEMINI_API_KEY")
+#API_KEY = "AIzaSyBIO9WyVWUZHxS07chZ2E-LOXQ0YOqB_yU"
 
 if not API_KEY:
     raise ValueError("ERROR: GEMINI_API_KEY is missing! Set it in your environment.")
