@@ -15,7 +15,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Load Environment Variables (Optional if you use .env)
-# load_dotenv()
+load_dotenv()
 
 # API Key for Google Generative AI
 API_KEY = os.getenv("GEMINI_API_KEY")
