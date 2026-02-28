@@ -1,7 +1,7 @@
 import os
 import hmac
 import hashlib
-import google.generativeai as genai
+from google import genai
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -14,12 +14,9 @@ from langdetect import detect
 app = Flask(__name__)
 CORS(app)
 
-# Load Environment Variables (Optional if you use .env)
 load_dotenv()
 
-# API Key for Google Generative AI
 API_KEY = os.getenv("GEMINI_API_KEY")
-
 
 if not API_KEY:
     raise ValueError("ERROR: GEMINI_API_KEY is missing! Set it in your environment.")
