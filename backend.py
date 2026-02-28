@@ -21,20 +21,32 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     raise ValueError("ERROR: GEMINI_API_KEY is missing! Set it in your environment.")
 
-# Gemini Model Configuration
-genai.configure(api_key=API_KEY)
+# # Gemini Model Configuration
+# genai.configure(api_key=API_KEY)
+# generation_config = {
+#     "temperature": 1,
+#     "top_p": 0.95,
+#     "top_k": 40,
+#     "max_output_tokens": 8192,
+#     "response_mime_type": "text/plain",
+# }
+# model = genai.GenerativeModel(
+#     model_name="gemini-2.5-flash",
+#     generation_config=generation_config,
+# )
+
+
+# ✅ NEW Gemini Client Initialization
+client = genai.Client(api_key=API_KEY)
+
 generation_config = {
     "temperature": 1,
     "top_p": 0.95,
     "top_k": 40,
     "max_output_tokens": 8192,
-    "response_mime_type": "text/plain",
 }
-model = genai.GenerativeModel(
-    model_name="gemini-2.5-flash",
-    generation_config=generation_config,
-)
-# Set up LangChain LLM and Memory
+
+# LangChain Setup
 llm = GoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=API_KEY)
 memory = ConversationBufferMemory()
 conversation = ConversationChain(llm=llm, memory=memory)
