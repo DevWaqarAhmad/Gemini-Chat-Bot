@@ -1,14 +1,21 @@
 import streamlit as st
-import os
 import uuid
 import backend
 
-
+# ==============================
+# Page Configuration
+# ==============================
 st.set_page_config(
     page_title="Butt Karahi AI Agent",
+    page_icon="",
     layout="wide"
 )
-# Initialize session state
+
+st.title("Butt Karahi AI Agent")
+
+# ==============================
+# Session State Initialization
+# ==============================
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -21,60 +28,90 @@ if "user_id" not in st.session_state:
 if "language" not in st.session_state:
     st.session_state.language = "Auto-Detect"
 
-user_id = st.session_state.user_id
-language_options = ["Auto-Detect"] + [lang["name"] for lang in backend.SUPPORTED_LANGUAGES.values()]
+# ==============================
+# Greetings per language
+# ==============================
+GREETINGS = {
+    "Auto-Detect": "Hello! Welcome to Butt Karahi. How can I assist you today? 🍽️",
+    "en": "Hello! Welcome to Butt Karahi. How can I assist you today? 🍽️",
+    "ur": "!خوش آمدید! Butt Karahi میں آپ کا استقبال ہے۔ میں آپ کی کس طرح مدد کر سکتا ہوں؟ 🍽️",
+    "ar": "!مرحبًا! أهلاً بك في Butt Karahi. كيف يمكنني مساعدتك اليوم؟ 🍽️",
+    "hi": "नमस्ते! Butt Karahi में आपका स्वागत है। मैं आपकी कैसे मदद कर सकता हूँ? 🍽️",
+}
 
-st.title("Butt Karahi AI Agent")
-
-# Sidebar settings
+# ==============================
+# Sidebar
+# ==============================
 with st.sidebar:
-    st.header("Settings")
-    st.session_state.language = st.selectbox(
+    st.header("⚙️ Settings")
+
+    language_options = ["Auto-Detect"] + list(backend.SUPPORTED_LANGUAGES.keys())
+
+    selected_lang = st.selectbox(
         "🌐 Select Language",
         language_options,
         index=language_options.index(st.session_state.language)
     )
-    
-    if st.button("🔄 Refresh Chat"):
+
+    # If language changed, reset chat
+    if selected_lang != st.session_state.language:
+        st.session_state.language = selected_lang
         st.session_state.messages = []
+        st.session_state.user_name = None
         st.rerun()
 
-# Initial greeting
-if not st.session_state.messages:
-    lang_code = "en" if st.session_state.language == "Auto-Detect" else next(
-        (code for code, val in backend.SUPPORTED_LANGUAGES.items() if val["name"] == st.session_state.language),
-        "en"
-    )
-    
-    greeting = backend.SUPPORTED_LANGUAGES.get(lang_code, backend.SUPPORTED_LANGUAGES["en"])["greeting"]
-    st.session_state.messages.append({"role": "assistant", "content": greeting})
+    if st.button("🔄 New Chat"):
+        st.session_state.messages = []
+        st.session_state.user_name = None
+        st.rerun()
 
-# Show chat history
+    st.divider()
+    st.markdown("**📍 Our Locations:**")
+    st.markdown("🏬 Mississauga: 3015 Winston Churchill Blvd")
+    st.markdown("🏬 Pickering: 820 Kingston Rd")
+
+# ==============================
+# Initial Greeting
+# ==============================
+if not st.session_state.messages:
+    greeting = GREETINGS.get(st.session_state.language, GREETINGS["en"])
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": greeting
+    })
+
+# ==============================
+# Display Chat History
+# ==============================
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Handle user input
-if prompt := st.chat_input("Ask Something About Butt Karahi?"):
+# ==============================
+# Handle User Input
+# ==============================
+if prompt := st.chat_input("Ask something about Butt Karahi..."):
+
+    # Save and show user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Detect if user shares their name
+    # Detect and store name
     if "my name is" in prompt.lower():
-        st.session_state.user_name = prompt.split("my name is")[-1].strip()
+        name = prompt.lower().split("my name is")[-1].strip().title()
+        st.session_state.user_name = name
 
-    # Special case for remembering name
+    # Name recall
     if "what is my name" in prompt.lower() and st.session_state.user_name:
-        response = f"Your name is {st.session_state.user_name}!"
+        response = f"Your name is **{st.session_state.user_name}**! 😊"
     else:
-        # Call backend generate_response function with entire chat history context
-        full_chat = "\n".join([message["content"] for message in st.session_state.messages])
-        response = backend.generate_response(prompt, st.session_state.language, context=full_chat)
+        # Show spinner while generating
+        with st.spinner("Thinking..."):
+            response = backend.generate_response(prompt)
 
-    # Show assistant reply
+    # Display and save assistant reply
     with st.chat_message("assistant"):
         st.markdown(response)
 
-    # Save assistant's response in memory (handled by LangChain's memory)
     st.session_state.messages.append({"role": "assistant", "content": response})
