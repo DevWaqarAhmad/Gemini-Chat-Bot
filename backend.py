@@ -6,9 +6,8 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from langdetect import detect
 
-# ==============================
 # Flask Initialization
-# ==============================
+
 app = Flask(__name__)
 CORS(app)
 
@@ -19,9 +18,8 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     raise ValueError("❌ GEMINI_API_KEY is missing in environment variables.")
 
-# ==============================
 # Gemini Client Initialization
-# ==============================
+
 client = genai.Client(api_key=API_KEY)
 
 GENERATION_CONFIG = {
@@ -31,9 +29,7 @@ GENERATION_CONFIG = {
     "max_output_tokens": 2048,
 }
 
-# ==============================
 # Supported Languages
-# ==============================
 SYSTEM_PROMPT_EN = """You are the official AI Agent of Butt Karahi restaurant. Your name is "Butt Karahi AI Agent".
 
 STRICT RULES:
@@ -70,9 +66,7 @@ SUPPORTED_LANGUAGES = {
     "hi": {"prompt": SYSTEM_PROMPT_HI},
 }
 
-# ==============================
 # Helper Functions
-# ==============================
 def detect_language(text: str) -> str:
     try:
         lang = detect(text)
@@ -103,13 +97,13 @@ def load_training_data(file_path="data.txt"):
     return conversation_examples
 
 
-# ✅ Load once at startup
+
 TRAINING_DATA = load_training_data("data.txt")
 
 
-# ==============================
+
 # Core Response Function
-# ==============================
+
 def generate_response(user_input: str) -> str:
     try:
         user_lang = detect_language(user_input)
@@ -138,9 +132,8 @@ def generate_response(user_input: str) -> str:
         return f"❌ ERROR: {str(e)}"
 
 
-# ==============================
 # API Routes
-# ==============================
+
 @app.route('/chat', methods=['POST'])
 def chat():
     user_input = request.form.get('message')
@@ -155,8 +148,6 @@ def home():
     return "✅ Butt Karahi AI Chatbot is running."
 
 
-# ==============================
-# Run Server
-# ==============================
+
 if __name__ == '__main__':
     app.run(debug=True)
