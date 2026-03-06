@@ -1,17 +1,6 @@
-"""
-Butt Karahi - backend.py Direct Test Script
-============================================
-Directly imports backend.py — No Flask server needed!
-Run: python test_backend.py
-Or interactive: python test_backend.py chat
-"""
-
 import sys
 import time
 
-# ==============================
-# ANSI Colors
-# ==============================
 GREEN  = "\033[92m"
 RED    = "\033[91m"
 YELLOW = "\033[93m"
@@ -19,9 +8,6 @@ CYAN   = "\033[96m"
 BOLD   = "\033[1m"
 RESET  = "\033[0m"
 
-# ==============================
-# Import Backend
-# ==============================
 print(f"{YELLOW}[*] Importing backend.py ...{RESET}")
 try:
     import backend
@@ -34,11 +20,7 @@ except Exception as e:
     print(f"{RED}[✗] Error loading backend.py: {e}{RESET}")
     sys.exit(1)
 
-# ==============================
-# Test Cases
-# ==============================
 TEST_CASES = [
-    # ── English ──────────────────────────────────────────────────
     {
         "category": "Identity",
         "message": "Who are you?",
@@ -77,15 +59,13 @@ TEST_CASES = [
     {
         "category": "Opening Hours",
         "message": "What are your opening hours?",
-        "expect_keywords": []  # Just check response exists
+        "expect_keywords": []
     },
     {
         "category": "Contact",
         "message": "How can I contact you?",
         "expect_keywords": []
     },
-
-    # ── Urdu ──────────────────────────────────────────────────────
     {
         "category": "Urdu - Location",
         "message": "آپ کے ریسٹورنٹ کہاں ہیں؟",
@@ -96,15 +76,11 @@ TEST_CASES = [
         "message": "مینو بتائیں",
         "expect_keywords": []
     },
-
-    # ── Hindi ─────────────────────────────────────────────────────
     {
         "category": "Hindi - Menu",
         "message": "मेनू क्या है?",
         "expect_keywords": []
     },
-
-    # ── Edge Cases ────────────────────────────────────────────────
     {
         "category": "Edge - Off-topic",
         "message": "Can you help me with Python programming?",
@@ -118,13 +94,10 @@ TEST_CASES = [
     {
         "category": "Edge - Empty spaces",
         "message": "   ",
-        "expect_keywords": []  # Should handle gracefully
+        "expect_keywords": []
     },
 ]
 
-# ==============================
-# Helpers
-# ==============================
 def check_keywords(text: str, keywords: list) -> bool:
     if not keywords:
         return True
@@ -137,9 +110,6 @@ def print_header():
     print(f"{BOLD}{'='*60}{RESET}\n")
 
 
-# ==============================
-# Check Training Data Loaded
-# ==============================
 def check_training_data():
     print(f"{YELLOW}[*] Checking training data (data.txt) ...{RESET}")
     count = len(backend.TRAINING_DATA)
@@ -150,9 +120,6 @@ def check_training_data():
         print(f"{GREEN}[✓] {pairs} Q&A pairs loaded from data.txt{RESET}\n")
 
 
-# ==============================
-# Run All Tests
-# ==============================
 def run_tests():
     print_header()
     check_training_data()
@@ -166,7 +133,6 @@ def run_tests():
         print(f"{CYAN}[{i:02d}/{len(TEST_CASES)}] {test['category']}{RESET}")
         print(f"       Q: {test['message']}")
 
-        # Skip whitespace-only inputs gracefully
         if not test["message"].strip():
             print(f"       {YELLOW}[⚠ SKIPPED] Whitespace input — testing graceful handling{RESET}")
             try:
@@ -190,7 +156,6 @@ def run_tests():
                 failed_list.append((test["category"], "Empty response"))
                 continue
 
-            # Show preview
             preview = response[:150].replace("\n", " ")
             print(f"       A: {preview}{'...' if len(response) > 150 else ''}")
             print(f"       ⏱  {elapsed:.2f}s", end="  ")
@@ -208,9 +173,8 @@ def run_tests():
             errors += 1
             failed_list.append((test["category"], str(e)))
 
-        time.sleep(0.3)  # Small delay between API calls
+        time.sleep(0.3)
 
-    # ── Summary ───────────────────────────────────────────────────
     print(f"\n{BOLD}{'='*60}{RESET}")
     print(f"{BOLD}  TEST SUMMARY{RESET}")
     print(f"{BOLD}{'='*60}{RESET}")
@@ -229,9 +193,6 @@ def run_tests():
     return passed, failed, errors
 
 
-# ==============================
-# Interactive Chat Mode
-# ==============================
 def interactive_mode():
     print(f"\n{BOLD}{'='*60}{RESET}")
     print(f"{BOLD}  Interactive Chat  (type 'quit' to exit){RESET}")
@@ -263,17 +224,12 @@ def interactive_mode():
             print(f"{RED}Error: {e}{RESET}\n")
 
 
-# ==============================
-# Entry Point
-# ==============================
 if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "test"
 
     if mode == "chat":
-        # python test_backend.py chat
         interactive_mode()
     else:
-        # python test_backend.py
         passed, failed, errors = run_tests()
 
         if errors == 0:
